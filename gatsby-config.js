@@ -1,3 +1,5 @@
+// gatsby-config.js
+const siteUrl = `https://kind-curie-54e7b1.netlify.app`
 module.exports = {
   siteMetadata: {
     title: 'Gatsby + Netlify CMS Starter',
@@ -5,6 +7,54 @@ module.exports = {
       'This repo contains an example business website that is built with Gatsby, and Netlify CMS.It follows the JAMstack architecture by using Git as a single source of truth, and Netlify for continuous deployment, and CDN distribution.',
   },
   plugins: [
+    {
+      resolve: `gatsby-plugin-json-output`,
+      options: {
+        siteUrl: siteUrl, // defined on top of plugins
+        graphQLQuery: `
+          {
+            allMarkdownRemark(limit: 1000) {
+              edges {
+                node {
+                  excerpt
+                  html
+                  fields { path }
+                  frontmatter {
+                    title
+                    created
+                    updated
+                  }
+                }
+              }
+            }
+          }
+        `,
+        serialize: results => results.data.allMarkdownRemark.edges.map(({ node }) => ({
+          path: node.fields.path, // MUST contain a path
+          title: node.frontmatter.title,
+          created: node.frontmatter.created,
+          updated: node.frontmatter.updated,
+          html: node.html,
+        })),
+        feedMeta: {
+          author: {
+            name: 'Patrick',
+          },
+          description: 'test123',
+          favicon: `${siteUrl}/icons/icon-48x48.png`,
+          title: 'testsite',
+        },
+        serializeFeed: results => results.data.allMarkdownRemark.edges.map(({ node }) => ({
+          id: node.fields.path,
+          url: siteUrl + node.fields.path,
+          title: node.frontmatter.title,
+          date_published: new Date(node.frontmatter.created).toISOString(),
+          date_modified: new Date(node.frontmatter.updated).toISOString(),
+          excerpt: node.excerpt,
+        })),
+        nodesPerFeedFile: 100,
+      }
+    },
     'gatsby-plugin-react-helmet',
     'gatsby-plugin-sass',
     {
